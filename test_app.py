@@ -38,13 +38,15 @@ end_time = start_time + timedelta(hours=1)
 st.set_page_config(page_title="اختبار تجريبي", layout="centered")
 st.title("📝 منصة الاختبار التجريبي")
 
-# تعريف حالة البداية
+# الجلسة
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "quiz_started" not in st.session_state:
     st.session_state.quiz_started = False
 if "start_timestamp" not in st.session_state:
     st.session_state.start_timestamp = None
+if "user_name" not in st.session_state:
+    st.session_state.user_name = ""
 
 # تسجيل الدخول
 if not st.session_state.logged_in:
@@ -59,20 +61,21 @@ if not st.session_state.logged_in:
             elif now > end_time:
                 st.error("❌ انتهى وقت الاختبار.")
             else:
-                st.success("✅ تم تسجيل الدخول! يمكنك بدء الاختبار.")
                 st.session_state.logged_in = True
+                st.session_state.user_name = user_name
+                st.success(f"مرحبًا {user_name}، تم تسجيل الدخول! يمكنك بدء الاختبار.")
         else:
             st.error("❌ الاسم أو الرقم غير صحيح.")
     st.stop()
 
-# بدء الاختبار
+# بعد تسجيل الدخول
 if st.session_state.logged_in and not st.session_state.quiz_started:
+    st.subheader(f"👋 أهلاً {st.session_state.user_name}")
     if st.button("ابدأ الاختبار"):
         st.session_state.quiz_started = True
         st.session_state.start_timestamp = time.time()
-    st.stop()
 
-# واجهة الأسئلة
+# عرض الأسئلة
 if st.session_state.quiz_started:
     st.subheader("📋 الأسئلة")
     answers = []
