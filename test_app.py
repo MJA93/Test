@@ -5,7 +5,7 @@ import pandas as pd
 
 # إعداد وقت بدء الاختبار الرسمي (مثلاً الساعة 5:30 صباحاً)
 OFFICIAL_HOUR = 5
-OFFICIAL_MINUTE = 30
+OFFICIAL_MINUTE = 10
 
 # تثبيت توقيت بدء الاختبار الرسمي في الجلسة
 if "official_start_time" not in st.session_state:
