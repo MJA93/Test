@@ -19,7 +19,7 @@ questions = [
 
 ksa_tz = pytz.timezone("Asia/Riyadh")
 now_ksa = datetime.now(ksa_tz)
-OFFICIAL_START_TIME = now_ksa.replace(hour=5, minute=30, second=0, microsecond=0)
+OFFICIAL_START_TIME = now_ksa.replace(hour=5, minute=01, second=0, microsecond=0)
 if now_ksa > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
 TEST_DURATION_MINUTES = 20
