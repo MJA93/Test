@@ -1,98 +1,29 @@
-from flask import Flask, render_template_string, request, redirect, url_for, session
+from flask import Flask, request, session, redirect, url_for, render_template_string
 from datetime import datetime, timedelta
 import pytz
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'
+app.secret_key = 'secret_key'
 
-# بيانات المشاركين (تجريبية)
+# بيانات المشاركين التجريبية
 participants = {
     "1001": "أحمد علي",
-    "1002": "سارة محمد",
-    "1003": "خالد يوسف"
+    "1002": "سارة محمد"
 }
 
-# الأسئلة التجريبية
+# أسئلة تجريبية
 questions = [
-    {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أحمر", "أخضر", "أصفر"], "answer": "أزرق"},
-    {"type": "true_false", "question": "الشمس تشرق من الغرب.", "answer": "خطأ"},
-    {"type": "text", "question": "ما اسم عاصمة السعودية؟", "answer": "الرياض"},
+    {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أخضر", "أحمر"], "answer": "أزرق"},
+    {"type": "true_false", "question": "الشمس تشرق من الشرق.", "answer": "صحيح"},
+    {"type": "text", "question": "ما عاصمة السعودية؟", "answer": "الرياض"},
 ]
 
-# التوقيت المحلي (السعودية)
 ksa_tz = pytz.timezone("Asia/Riyadh")
 now_ksa = datetime.now(ksa_tz)
 OFFICIAL_START_TIME = now_ksa.replace(hour=5, minute=30, second=0, microsecond=0)
 if now_ksa > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
-
 TEST_DURATION_MINUTES = 20
-
-WAIT_PAGE_HTML = """
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>الانتظار لبدء الاختبار</title>
-    <meta http-equiv="refresh" content="15">
-    <style>
-        body { font-family: 'Tahoma', sans-serif; background-color: #f2f2f2; text-align: center; padding-top: 100px; direction: rtl; }
-        h2 { color: #333; }
-    </style>
-</head>
-<body>
-    <h2>🕒 الاختبار لم يبدأ بعد</h2>
-    <p>الوقت المتبقي لبدء الاختبار: <strong>{minutes} دقيقة و {seconds} ثانية</strong></p>
-    <p>توقيت السعودية الحالي: {current_time}</p>
-    <p>يتم التحديث التلقائي كل 15 ثانية...</p>
-</body>
-</html>
-"""
-
-LOGIN_PAGE_HTML = """
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>تسجيل الدخول</title>
-    <style>
-        body { font-family: 'Tahoma', sans-serif; background-color: #fdfdfd; text-align: center; padding-top: 100px; direction: rtl; }
-        input { padding: 10px; margin: 10px; width: 200px; }
-        button { padding: 10px 20px; background-color: #3b7ddd; color: white; border: none; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h2>🔐 تسجيل الدخول للاختبار</h2>
-    <form method="post">
-        <input name="user_id" placeholder="رقم المشارك"><br>
-        <input name="user_name" placeholder="الاسم الكامل"><br>
-        <button type="submit">دخول</button>
-    </form>
-</body>
-</html>
-"""
-
-START_BUTTON_HTML = """
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>ابدأ الاختبار</title>
-    <style>
-        body { font-family: 'Tahoma', sans-serif; background-color: #e5f1fb; text-align: center; padding-top: 100px; direction: rtl; }
-        button { padding: 15px 30px; font-size: 18px; background-color: #28a745; color: white; border: none; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h2>👋 مرحبًا {user_name}</h2>
-    <p>اضغط على الزر لبدء الاختبار</p>
-    <form method="post">
-        <input type="hidden" name="start" value="1">
-        <button type="submit">ابدأ الاختبار الآن</button>
-    </form>
-</body>
-</html>
-"""
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -101,7 +32,13 @@ def login():
         remaining = OFFICIAL_START_TIME - now
         minutes, seconds = divmod(remaining.seconds, 60)
         current_time = now.strftime("%H:%M:%S")
-        return WAIT_PAGE_HTML.format(minutes=minutes, seconds=seconds, current_time=current_time)
+        return f"""
+        <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
+        <h3>الاختبار لم يبدأ بعد</h3>
+        <p>الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</p>
+        <p>الساعة الآن بتوقيت السعودية: {current_time}</p>
+        <meta http-equiv='refresh' content='15'>
+        </body></html>"""
 
     if request.method == 'POST':
         user_id = request.form['user_id']
@@ -111,8 +48,17 @@ def login():
             session['user_name'] = user_name
             return redirect(url_for('start'))
         else:
-            return "<h3>❌ بيانات الدخول غير صحيحة</h3>"
-    return LOGIN_PAGE_HTML
+            return "<h3>بيانات غير صحيحة</h3>"
+
+    return '''
+    <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
+    <h3>تسجيل الدخول</h3>
+    <form method='post'>
+        <input name='user_id' placeholder='رقم المشارك'><br>
+        <input name='user_name' placeholder='الاسم'><br>
+        <button type='submit'>دخول</button>
+    </form></body></html>
+    '''
 
 @app.route('/start', methods=['GET', 'POST'])
 def start():
@@ -123,7 +69,13 @@ def start():
         session['start_time'] = datetime.now(ksa_tz).isoformat()
         return redirect(url_for('exam'))
 
-    return START_BUTTON_HTML.format(user_name=session['user_name'])
+    return f"""
+    <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
+    <h3>مرحبًا {session['user_name']}</h3>
+    <form method='post'>
+        <input type='hidden' name='start' value='1'>
+        <button type='submit'>ابدأ الاختبار</button>
+    </form></body></html>"""
 
 @app.route('/exam', methods=['GET', 'POST'])
 def exam():
@@ -151,23 +103,24 @@ def exam():
     for i, q in enumerate(questions):
         question_html += f"<p><b>{i+1}. {q['question']}</b><br>"
         if q['type'] == 'mcq':
-            for option in q['options']:
-                question_html += f'<input type="radio" name="q{i}" value="{option}"> {option}<br>'
+            for opt in q['options']:
+                question_html += f"<input type='radio' name='q{i}' value='{opt}'> {opt}<br>"
         elif q['type'] == 'true_false':
-            for option in ['صحيح', 'خطأ']:
-                question_html += f'<input type="radio" name="q{i}" value="{option}"> {option}<br>'
+            for opt in ['صحيح', 'خطأ']:
+                question_html += f"<input type='radio' name='q{i}' value='{opt}'> {opt}<br>"
         elif q['type'] == 'text':
-            question_html += f'<input type="text" name="q{i}"><br>'
+            question_html += f"<input type='text' name='q{i}'><br>"
         question_html += "</p>"
 
     return render_template_string(f'''
-        <h2>📝 الاختبار - {session['user_name']}</h2>
-        <h3>⏳ الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</h3>
-        <form method="post">
-            {question_html}
-            <button type="submit">إرسال الإجابات</button>
-        </form>
+    <html dir='rtl'><body style='font-family:tahoma;padding:40px;'>
+    <h2>📝 الاختبار - {session['user_name']}</h2>
+    <h4>⏳ الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</h4>
+    <form method='post'>
+    {question_html}
+    <button type='submit'>إرسال</button>
+    </form></body></html>
     ''')
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000)
+    app.run(debug=True)
