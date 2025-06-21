@@ -19,6 +19,7 @@ questions = [
 OFFICIAL_START_TIME = datetime.now().replace(hour=6, minute=30, second=0, microsecond=0)
 if datetime.now() > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
+    
 
 TEST_DURATION_MINUTES = 20
 
