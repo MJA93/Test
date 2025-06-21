@@ -2,7 +2,7 @@ from flask import Flask, render_template_string, request, redirect, url_for, ses
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'  # استخدم مفتاح حقيقي في الإنتاج
+app.secret_key = 'super_secret_key'  # في الإنتاج استخدم مفتاح حقيقي
 
 # بيانات المشاركين (تجريبية)
 participants = {
@@ -11,13 +11,14 @@ participants = {
     "1003": "خالد يوسف"
 }
 
-# بيانات الأسئلة
+# الأسئلة التجريبية
 questions = [
     {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أحمر", "أخضر", "أصفر"], "answer": "أزرق"},
     {"type": "true_false", "question": "الشمس تشرق من الغرب.", "answer": "خطأ"},
     {"type": "text", "question": "ما اسم عاصمة السعودية؟", "answer": "الرياض"},
 ]
 
+# توقيت بدء الاختبار الرسمي (مثال: 5:30 صباحاً)
 OFFICIAL_START_TIME = datetime.now().replace(hour=5, minute=30, second=0, microsecond=0)
 if datetime.now() > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
@@ -41,8 +42,9 @@ def login():
             session['start_time'] = datetime.now().isoformat()
             return redirect(url_for('exam'))
         else:
-            return "<h3>بيانات الدخول غير صحيحة</h3>"
+            return "<h3>❌ بيانات الدخول غير صحيحة</h3>"
     return '''
+        <h2>تسجيل الدخول</h2>
         <form method="post">
             رقم المشارك: <input name="user_id"><br>
             الاسم الكامل: <input name="user_name"><br>
@@ -61,7 +63,7 @@ def exam():
     remaining = TEST_DURATION_MINUTES * 60 - elapsed
 
     if remaining <= 0:
-        return "<h3>انتهى الوقت!</h3>"
+        return "<h3>⏰ انتهى الوقت!</h3>"
 
     minutes = int(remaining // 60)
     seconds = int(remaining % 60)
@@ -70,9 +72,9 @@ def exam():
         answers = {}
         for i, q in enumerate(questions):
             answers[f"Q{i+1}"] = request.form.get(f"q{i}", "")
-        return f"<h3>تم إرسال إجاباتك:</h3><pre>{answers}</pre>"
+        return f"<h3>✅ تم إرسال إجاباتك:</h3><pre>{answers}</pre>"
 
-    # بناء صفحة الأسئلة
+    # إنشاء صفحة الأسئلة
     question_html = ""
     for i, q in enumerate(questions):
         question_html += f"<p><b>{i+1}. {q['question']}</b><br>"
@@ -88,7 +90,7 @@ def exam():
 
     return render_template_string(f'''
         <h2>مرحبًا {session['user_name']}</h2>
-        <h3>الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</h3>
+        <h3>⏳ الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</h3>
         <form method="post">
             {question_html}
             <input type="submit" value="إرسال الإجابات">
@@ -97,4 +99,4 @@ def exam():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
