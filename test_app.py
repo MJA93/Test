@@ -6,30 +6,31 @@ import pytz
 app = Flask(__name__)
 app.secret_key = 'secret_key'
 
+# المشاركون التجريبيون
 participants = {
     "1001": "أحمد علي",
     "1002": "سارة محمد"
 }
 
+# أسئلة تجريبية
 questions = [
     {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أخضر", "أحمر"], "answer": "أزرق"},
     {"type": "true_false", "question": "الشمس تشرق من الشرق.", "answer": "صحيح"},
     {"type": "text", "question": "ما عاصمة السعودية؟", "answer": "الرياض"},
 ]
 
+# توقيت السعودية
 ksa_tz = pytz.timezone("Asia/Riyadh")
-now_ksa = datetime.now(ksa_tz)
-OFFICIAL_START_TIME = now_ksa.replace(hour=5, minute=30, second=0, microsecond=0)
-if now_ksa > OFFICIAL_START_TIME:
-    OFFICIAL_START_TIME += timedelta(days=1)
+OFFICIAL_START_TIME = ksa_tz.localize(datetime(2025, 6, 21, 7, 30, 0))
 TEST_DURATION_MINUTES = 20
 
+# صفحة الانتظار المحسنة
 WAIT_PAGE_HTML = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>انتظار بدء الاختبار</title>
+    <title>الاختبار لم يبدأ بعد</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
     <style>
         body {
@@ -164,7 +165,8 @@ def exam():
     if 'user_id' not in session or 'start_time' not in session:
         return redirect(url_for('login'))
 
-    start_time = datetime.fromisoformat(session['start_time'])
+    # استرجاع وقت البداية من الجلسة
+    start_time = ksa_tz.localize(datetime.fromisoformat(session['start_time']).replace(tzinfo=None))
     now = datetime.now(ksa_tz)
     elapsed = (now - start_time).total_seconds()
     remaining = TEST_DURATION_MINUTES * 60 - elapsed
