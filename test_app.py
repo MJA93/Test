@@ -3,10 +3,17 @@ import time
 from datetime import datetime, timedelta
 import pandas as pd
 
-# إعداد وقت بدء الاختبار الرسمي (5:30 صباحاً بتوقيت السعودية)
-official_start_time = datetime.now().replace(hour=5, minute=30, second=0, microsecond=0)
-if datetime.now().hour >= 5:
-    official_start_time += timedelta(days=1)
+# إعداد وقت بدء الاختبار الرسمي (مثلاً الساعة 5:30 صباحاً)
+OFFICIAL_HOUR = 5
+OFFICIAL_MINUTE = 30
+
+# تثبيت توقيت بدء الاختبار الرسمي في الجلسة
+if "official_start_time" not in st.session_state:
+    now = datetime.now()
+    start_time = now.replace(hour=OFFICIAL_HOUR, minute=OFFICIAL_MINUTE, second=0, microsecond=0)
+    if now > start_time:
+        start_time += timedelta(days=1)  # لو الوقت الحالي بعد 5:30 نحدد الغد
+    st.session_state.official_start_time = start_time
 
 # مدة الاختبار بالدقائق
 TEST_DURATION_MINUTES = 20
@@ -18,29 +25,12 @@ participants = {
     "1003": "خالد يوسف"
 }
 
-# نموذج الأسئلة
+# نموذج أسئلة تجريبية
 questions = [
-    {
-        "type": "mcq",
-        "question": "ما هو لون السماء؟",
-        "options": ["أزرق", "أحمر", "أخضر", "أصفر"],
-        "answer": "أزرق"
-    },
-    {
-        "type": "true_false",
-        "question": "الشمس تشرق من الغرب.",
-        "answer": "خطأ"
-    },
-    {
-        "type": "text",
-        "question": "ما اسم عاصمة المملكة العربية السعودية؟",
-        "answer": "الرياض"
-    }
+    {"type": "mcq", "question": "ما هو لون السماء؟", "options": ["أزرق", "أحمر", "أخضر", "أصفر"], "answer": "أزرق"},
+    {"type": "true_false", "question": "الشمس تشرق من الغرب.", "answer": "خطأ"},
+    {"type": "text", "question": "ما اسم عاصمة المملكة العربية السعودية؟", "answer": "الرياض"}
 ]
-
-# إعداد واجهة Streamlit
-st.set_page_config(page_title="اختبار تجريبي", layout="centered")
-st.title("📝 منصة الاختبار")
 
 # تهيئة الجلسة
 if "logged_in" not in st.session_state:
@@ -56,10 +46,16 @@ if "user_id" not in st.session_state:
 if "user_name" not in st.session_state:
     st.session_state.user_name = ""
 
-# انتظار وقت البدء الرسمي
+# إعداد الواجهة
+st.set_page_config(page_title="نموذج اختبار بوقت محدد", layout="centered")
+st.title("📝 منصة الاختبار التجريبي")
+
+# التحقق من وقت البدء الرسمي
 now = datetime.now()
-if now < official_start_time:
-    st.info(f"⏰ يبدأ الاختبار الساعة 5:30 صباحًا بتوقيت السعودية ({official_start_time.strftime('%Y-%m-%d %H:%M')})")
+if now < st.session_state.official_start_time:
+    remaining_time = st.session_state.official_start_time - now
+    minutes, seconds = divmod(remaining_time.seconds, 60)
+    st.warning(f"⏰ لم يبدأ الاختبار بعد. الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية.")
     st.stop()
 
 # تسجيل الدخول
@@ -77,7 +73,7 @@ if not st.session_state.logged_in:
             st.error("❌ الاسم أو الرقم غير صحيح.")
     st.stop()
 
-# شاشة بدء الاختبار
+# بعد تسجيل الدخول وقبل البدء
 if st.session_state.logged_in and not st.session_state.quiz_started:
     st.subheader(f"👋 أهلاً {st.session_state.user_name}")
     if st.button("ابدأ الاختبار الآن"):
@@ -85,7 +81,7 @@ if st.session_state.logged_in and not st.session_state.quiz_started:
         st.session_state.start_timestamp = time.time()
     st.stop()
 
-# عرض الأسئلة مع عداد تنازلي
+# الاختبار قيد التنفيذ
 if st.session_state.quiz_started:
     elapsed = time.time() - st.session_state.start_timestamp
     remaining = TEST_DURATION_MINUTES * 60 - elapsed
@@ -97,15 +93,15 @@ if st.session_state.quiz_started:
         submitted_answers = []
         for i, q in enumerate(questions):
             ans = st.session_state.answers[i] if i < len(st.session_state.answers) else ""
-            if ans.strip() != "":
+            if ans.strip():
                 submitted_answers.append({
                     "رقم المشارك": st.session_state.user_id,
                     "الاسم": st.session_state.user_name,
                     "السؤال": q["question"],
-                    "إجابته": ans
+                    "الإجابة": ans
                 })
         results_df = pd.DataFrame(submitted_answers)
-        st.write("📋 إجاباتك:")
+        st.success("✅ تم حفظ إجاباتك:")
         st.dataframe(results_df)
         st.stop()
 
