@@ -2,36 +2,53 @@ from flask import Flask, render_template_string, request, redirect, url_for, ses
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'  # في الإنتاج استخدم مفتاح حقيقي
+app.secret_key = 'super_secret_key'
 
-# بيانات المشاركين (تجريبية)
 participants = {
     "1001": "أحمد علي",
     "1002": "سارة محمد",
     "1003": "خالد يوسف"
 }
 
-# الأسئلة التجريبية
 questions = [
     {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أحمر", "أخضر", "أصفر"], "answer": "أزرق"},
     {"type": "true_false", "question": "الشمس تشرق من الغرب.", "answer": "خطأ"},
     {"type": "text", "question": "ما اسم عاصمة السعودية؟", "answer": "الرياض"},
 ]
 
-# توقيت بدء الاختبار الرسمي (مثال: 5:30 صباحاً)
-OFFICIAL_START_TIME = datetime.now().replace(hour=3, minute=30, second=0, microsecond=0)
+OFFICIAL_START_TIME = datetime.now().replace(hour=5, minute=30, second=0, microsecond=0)
 if datetime.now() > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
 
 TEST_DURATION_MINUTES = 20
 
+WAIT_PAGE_HTML = """
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>الانتظار لبدء الاختبار</title>
+    <meta http-equiv="refresh" content="15"> <!-- يحدث الصفحة كل 15 ثانية -->
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background-color: #f2f2f2; text-align: center; padding-top: 100px; direction: rtl; }
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+    <h2>🕒 الاختبار لم يبدأ بعد</h2>
+    <p>الوقت المتبقي لبدء الاختبار: <strong>{minutes} دقيقة و {seconds} ثانية</strong></p>
+    <p>يتم التحديث التلقائي كل 15 ثانية...</p>
+</body>
+</html>
+"""
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
     now = datetime.now()
     if now < OFFICIAL_START_TIME:
         remaining = OFFICIAL_START_TIME - now
-        return f"<h3>الاختبار لم يبدأ بعد. الوقت المتبقي: {remaining}</h3>"
+        minutes, seconds = divmod(remaining.seconds, 60)
+        return WAIT_PAGE_HTML.format(minutes=minutes, seconds=seconds)
 
     if request.method == 'POST':
         user_id = request.form['user_id']
@@ -51,7 +68,6 @@ def login():
             <input type="submit" value="دخول">
         </form>
     '''
-
 
 @app.route('/exam', methods=['GET', 'POST'])
 def exam():
@@ -74,7 +90,6 @@ def exam():
             answers[f"Q{i+1}"] = request.form.get(f"q{i}", "")
         return f"<h3>✅ تم إرسال إجاباتك:</h3><pre>{answers}</pre>"
 
-    # إنشاء صفحة الأسئلة
     question_html = ""
     for i, q in enumerate(questions):
         question_html += f"<p><b>{i+1}. {q['question']}</b><br>"
@@ -96,7 +111,6 @@ def exam():
             <input type="submit" value="إرسال الإجابات">
         </form>
     ''')
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=10000)
