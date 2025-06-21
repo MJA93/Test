@@ -33,12 +33,16 @@ def login():
         minutes, seconds = divmod(remaining.seconds, 60)
         current_time = now.strftime("%H:%M:%S")
         return f"""
-        <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
+        <html dir='rtl'>
+        <body style="text-align:center;padding-top:80px;font-family:tahoma;">
         <h3>الاختبار لم يبدأ بعد</h3>
-        <p>الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</p>
-        <p>الساعة الآن بتوقيت السعودية: {current_time}</p>
-        <meta http-equiv='refresh' content='15'>
-        </body></html>"""
+       <p>الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</p>
+       <p>الساعة الآن بتوقيت السعودية: {current_time}</p>
+       <meta http-equiv='refresh' content='15'>
+       </body>
+       </html>
+       """
+
 
     if request.method == 'POST':
         user_id = request.form['user_id']
