@@ -16,7 +16,7 @@ questions = [
     {"type": "text", "question": "ما اسم عاصمة السعودية؟", "answer": "الرياض"},
 ]
 
-OFFICIAL_START_TIME = datetime.now().replace(hour=5, minute=30, second=0, microsecond=0)
+OFFICIAL_START_TIME = datetime.now().replace(hour=6, minute=30, second=0, microsecond=0)
 if datetime.now() > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
 
