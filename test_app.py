@@ -6,13 +6,11 @@ import pytz
 app = Flask(__name__)
 app.secret_key = 'secret_key'
 
-# بيانات المشاركين التجريبية
 participants = {
     "1001": "أحمد علي",
     "1002": "سارة محمد"
 }
 
-# أسئلة تجريبية
 questions = [
     {"type": "mcq", "question": "ما لون السماء؟", "options": ["أزرق", "أخضر", "أحمر"], "answer": "أزرق"},
     {"type": "true_false", "question": "الشمس تشرق من الشرق.", "answer": "صحيح"},
@@ -26,25 +24,104 @@ if now_ksa > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
 TEST_DURATION_MINUTES = 20
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
+WAIT_PAGE_HTML = """
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>انتظار بدء الاختبار</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #0f172a, #1e293b);
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+        }
+        .circle {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background-color: #1e40af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(255,255,255,0.1);
+            animation: pulse 2s infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .time {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .note {
+            font-size: 1rem;
+            margin-top: 10px;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="mb-4">⌛ الرجاء الانتظار - لم يبدأ الاختبار بعد</h2>
+    <div class="circle text-center">
+        <div class="time" id="countdown">--:--:--:--</div>
+    </div>
+    <div class="note" id="now">الساعة الآن بتوقيت السعودية: ...</div>
+
+    <script>
+        const countdownEl = document.getElementById("countdown");
+        const nowEl = document.getElementById("now");
+        const startTime = new Date("{{ start_time }}").getTime();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const diff = startTime - now;
+
+            if (diff <= 0) {
+                window.location.href = "/login";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            countdownEl.textContent = `${days}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            const saTime = new Intl.DateTimeFormat('ar-SA', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                timeZone: 'Asia/Riyadh'
+            }).format(new Date());
+            nowEl.textContent = `الساعة الآن بتوقيت السعودية: ${saTime}`;
+        }
+
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
+"""
+
+@app.route('/', methods=['GET'])
+def wait():
     now = datetime.now(ksa_tz)
-    if now < OFFICIAL_START_TIME:
-        remaining = OFFICIAL_START_TIME - now
-        minutes, seconds = divmod(remaining.seconds, 60)
-        current_time = now.strftime("%H:%M:%S")
-        return f"""
-        <html dir='rtl'>
-        <body style="text-align:center;padding-top:80px;font-family:tahoma;">
-        <h3>الاختبار لم يبدأ بعد</h3>
-       <p>الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</p>
-       <p>الساعة الآن بتوقيت السعودية: {current_time}</p>
-       <meta http-equiv='refresh' content='15'>
-       </body>
-       </html>
-       """
+    if now >= OFFICIAL_START_TIME:
+        return redirect(url_for('login'))
+    return render_template_string(WAIT_PAGE_HTML, start_time=OFFICIAL_START_TIME.isoformat())
 
-
+@app.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
         user_id = request.form['user_id']
         user_name = request.form['user_name']
@@ -53,11 +130,11 @@ def login():
             session['user_name'] = user_name
             return redirect(url_for('start'))
         else:
-            return "<h3>بيانات غير صحيحة</h3>"
+            return "<h3>❌ بيانات غير صحيحة</h3>"
 
     return '''
     <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
-    <h3>تسجيل الدخول</h3>
+    <h3>🔐 تسجيل الدخول</h3>
     <form method='post'>
         <input name='user_id' placeholder='رقم المشارك'><br>
         <input name='user_name' placeholder='الاسم'><br>
@@ -76,10 +153,10 @@ def start():
 
     return f"""
     <html dir='rtl'><body style='text-align:center;padding-top:80px;font-family:tahoma;'>
-    <h3>مرحبًا {session['user_name']}</h3>
+    <h3>مرحبًا 👋 {session['user_name']}</h3>
     <form method='post'>
         <input type='hidden' name='start' value='1'>
-        <button type='submit'>ابدأ الاختبار</button>
+        <button type='submit'>🚀 ابدأ الاختبار</button>
     </form></body></html>"""
 
 @app.route('/exam', methods=['GET', 'POST'])
@@ -123,11 +200,10 @@ def exam():
     <h4>⏳ الوقت المتبقي: {minutes} دقيقة و {seconds} ثانية</h4>
     <form method='post'>
     {question_html}
-    <button type='submit'>إرسال</button>
+    <button type='submit'>📩 إرسال</button>
     </form></body></html>
     ''')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
