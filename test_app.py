@@ -19,7 +19,7 @@ questions = [
 ]
 
 # توقيت بدء الاختبار الرسمي (مثال: 5:30 صباحاً)
-OFFICIAL_START_TIME = datetime.now().replace(hour=5, minute=39, second=0, microsecond=0)
+OFFICIAL_START_TIME = datetime.now().replace(hour=3, minute=30, second=0, microsecond=0)
 if datetime.now() > OFFICIAL_START_TIME:
     OFFICIAL_START_TIME += timedelta(days=1)
 
