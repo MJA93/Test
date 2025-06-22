@@ -21,7 +21,7 @@ questions = [
 
 # توقيت السعودية
 ksa_tz = pytz.timezone("Asia/Riyadh")
-OFFICIAL_START_TIME = ksa_tz.localize(datetime(2025, 6, 21, 7, 30, 0))
+OFFICIAL_START_TIME = ksa_tz.localize(datetime(2025, 6, 22, 7, 30, 0))
 TEST_DURATION_MINUTES = 20
 
 # صفحة الانتظار المحسنة
