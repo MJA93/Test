@@ -9,7 +9,7 @@ app.secret_key = 'secret_key'
 
 # إعداد التوقيت
 ksa_tz = pytz.timezone("Asia/Riyadh")
-OFFICIAL_START_TIME = ksa_tz.localize(datetime(2025, 6, 22, 7, 30))
+OFFICIAL_START_TIME = ksa_tz.localize(datetime(2025, 6, 22, 20, 30))
 TEST_DURATION_MINUTES = 20
 
 # تحميل المشاركين من Excel
